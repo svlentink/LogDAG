@@ -58,7 +58,7 @@ def cron():
   if crontime != timestr:
     if len(crontime):
       metadata = create_block()
-#      broadcast_metadata(metadata) # TODO enable this
+      broadcast_metadata(metadata)
     crontime = timestr
     print('Log rotated')
 
@@ -104,7 +104,11 @@ def which_to_validate():
   '''
   global LogDAG
   n = config['links']
-  return LogDAG[(-1*n):]
+  arr = LogDAG[(-1*n):]
+  ids = []
+  for i in arr:
+    ids.append(i['blockid'])
+  return ids
 
 @app.route('/cdn/<int:inp>', methods=['GET'])
 def cdn(inp):
@@ -142,15 +146,16 @@ def get_block(blockid):
 def put_block_metadata():
   data = request.form
   global LogDAG
+  print(data)
   LogDAG.append(data)
   backup_DAG()
-  return data
+  return str(data)
 
 def backup_DAG():
   global LogDAG
   filename = config['blockdir'] + '/' + 'logdag.bak'
   with open(filename, 'w') as f:
-    f.write(LogDAG)
+    f.write(str(LogDAG))
 
 if __name__ == '__main__':
   init()

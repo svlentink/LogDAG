@@ -1,0 +1,54 @@
+version: '3'
+services:
+  cdn01:
+    build: .
+    environment:
+      HOSTNAME: cdn01
+    networks:
+      main:
+        aliases:
+          - cdn01
+    volumes:
+      - /tmp/LogDAGblocks/cdn01:/var/log/blocks
+      - $PWD/logdag.py:/main.py:ro
+  cdn02:
+    build: .
+    environment:
+      HOSTNAME: cdn02
+    networks:
+      main:
+        aliases:
+          - cdn02
+  cdn03:
+    build: .
+    environment:
+      HOSTNAME: cdn03
+    networks:
+      main:
+        aliases:
+          - cdn03
+  cdn04:
+    build: .
+    environment:
+      HOSTNAME: cdn04
+    networks:
+      main:
+        aliases:
+          - cdn04
+  cdn05:
+    build: .
+    environment:
+      HOSTNAME: cdn05
+    networks:
+      main:
+        aliases:
+          - cdn05
+  tester:
+    build: .
+    networks:
+      main:
+    volumes:
+      - $PWD/tester.py:/main.py:ro
+
+networks:
+  main:

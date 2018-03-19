@@ -10,7 +10,7 @@ services:
           - cdn01
     volumes:
       - /tmp/LogDAGblocks/cdn01:/var/log/blocks
-      - $PWD/logdag.py:/main.py:ro
+      - $PWD/logdag.py:/main.py:ro # for quick debugging
   cdn02:
     build: .
     environment:
@@ -19,6 +19,8 @@ services:
       main:
         aliases:
           - cdn02
+    volumes:
+      - /tmp/LogDAGblocks/cdn02:/var/log/blocks
   cdn03:
     build: .
     environment:
@@ -27,6 +29,8 @@ services:
       main:
         aliases:
           - cdn03
+    volumes:
+      - /tmp/LogDAGblocks/cdn03:/var/log/blocks
   cdn04:
     build: .
     environment:
@@ -35,6 +39,8 @@ services:
       main:
         aliases:
           - cdn04
+    volumes:
+      - /tmp/LogDAGblocks/cdn04:/var/log/blocks
   cdn05:
     build: .
     environment:
@@ -43,6 +49,8 @@ services:
       main:
         aliases:
           - cdn05
+    volumes:
+      - /tmp/LogDAGblocks/cdn05:/var/log/blocks
   tester:
     build: .
     networks:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import shutil
 from flask import Flask
 from flask import request
 import requests
@@ -57,9 +58,14 @@ def cron():
   if crontime != timestr:
     if len(crontime):
       metadata = create_block()
-      broadcast_metadata(metadata)
+#      broadcast_metadata(metadata) # TODO enable this
     crontime = timestr
     print('Log rotated')
+
+def get_current_logfile():
+  global crontime
+  filename = config['logdir'] + '/' + crontime
+  return filename
 
 def create_block():
   '''
@@ -68,21 +74,26 @@ def create_block():
   calculate the hash based on the nodes it links to and
   '''
   validates = which_to_validate()
-  blockid = config['hostname'] + str(datetime.datetime.now()) # TODO, this should be an hash of the encrypted block
+  blockid = config['hostname'] + str(datetime.datetime.now().timestamp()) # TODO, this should be an hash of the encrypted block
 
   global crontime
-  filename = config['logdir'] + '/' + crontime
+  filename = get_current_logfile()
   blockname = config['blockdir'] + '/' + blockid
-  os.rename(filename,blockname)
+  shutil.move(filename,blockname)
+  backup_DAG()
 
   metadata = get_block_metadata(blockid, validates=validates)
   return metadata
 
 def broadcast_metadata(metadata):
   for i in config['nodes']:
-    url = "http://" + i + '/block/metadata'
-    r = requests.post(url, data=metadata)
-    print(r.status_code, r.reason)
+    if i == config['hostname']:
+      global LogDAG
+      LogDAG.append(metadata)
+    else:
+      url = "http://" + i + '/block/metadata'
+      r = requests.post(url, data=metadata)
+      print(r.status_code, r.reason)
 
 def which_to_validate():
   '''
@@ -106,12 +117,11 @@ def cdn(inp):
 
   cron()
 
-  global crontime
-  filename = config['logdir'] + '/' + crontime
+  filename = get_current_logfile()
   with open(filename, 'a') as f:
     f.write(str(inp) + '\n')
 
-  return(inp,200)
+  return str(inp)
 
 
 @app.route('/block/<blockid>', methods=['GET'])
@@ -126,14 +136,21 @@ def get_block(blockid):
   with open(filename, 'r') as f:
     block = f.read()
 
-  return(block,200)
+  return block
 
 @app.route('/block/metadata', methods=['POST'])
 def put_block_metadata():
   data = request.form
   global LogDAG
   LogDAG.append(data)
-  return(data,200)
+  backup_DAG()
+  return data
+
+def backup_DAG():
+  global LogDAG
+  filename = config['blockdir'] + '/' + 'logdag.bak'
+  with open(filename, 'w') as f:
+    f.write(LogDAG)
 
 if __name__ == '__main__':
   init()

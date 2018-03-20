@@ -9,5 +9,5 @@ while True:
   for n in ['cdn01', 'cdn02', 'cdn03', 'cdn04', 'cdn05']:
     time.sleep(2)
     url = "http://" + n + '/cdn/' + str(datetime.datetime.now().second)
-    print(url)
+#    print(url)
     r = requests.get(url)

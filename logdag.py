@@ -8,7 +8,6 @@ import requests
 import time
 import datetime
 app = Flask(__name__)
-#from scenarios import *
 
 # settings
 config = {
@@ -19,9 +18,8 @@ config = {
   'hostname' : os.environ['HOSTNAME']
 }
 
-# global variables
+# global variable
 LogDAG = []
-crontime = ''
 
 def init():
   if config['links'] > len(config['nodes']):
@@ -41,31 +39,6 @@ def get_block_metadata(blockid : str, hostname: str = config['hostname'], valida
     'time' : millis,
     'validates' : validates
   }
-
-
-def cron():
-  '''
-  This function rotates the logs,
-  which should be done by /etc/cron.d
-  however, for this research, we do it here
-  so we can see it in the logs
-  '''
-  now = datetime.datetime.now()
-  arr = now.isoformat().split(':')
-  timestr = arr[0] + '_' + arr[1]
-  
-  global crontime
-  if crontime != timestr:
-    if len(crontime):
-      metadata = create_block()
-      broadcast_metadata(metadata)
-    crontime = timestr
-    print('Log rotated')
-
-def get_current_logfile():
-  global crontime
-  filename = config['logdir'] + '/' + crontime
-  return filename
 
 def create_block():
   '''
@@ -92,41 +65,26 @@ def broadcast_metadata(metadata):
       LogDAG.append(metadata)
     else:
       url = "http://" + i + '/block/metadata'
-      r = requests.post(url, data=metadata)
-      print(r.status_code, r.reason)
+      r = requests.post(url, json=metadata)
+#      print(r.status_code, r.reason)
 
 def which_to_validate():
   '''
   This function should contain a nice algorithm that specifies
   which blocks it will link to, based on some way of assigning
   weight to blocks.
+  Also, it should verify that it not links to blocks from its own hostname.
   However, we just take the last n blocks for now.
   '''
   global LogDAG
   n = config['links']
   arr = LogDAG[(-1*n):]
   ids = []
+
   for i in arr:
+#    print('linking to',i)
     ids.append(i['blockid'])
   return ids
-
-@app.route('/cdn/<int:inp>', methods=['GET'])
-def cdn(inp):
-  '''
-  This function simulates a webserver or cdn.
-  We use this instead of Nginx so we can use custom logging
-  and trigger the cron function.
-  '''
-#  print(request) # debug
-
-  cron()
-
-  filename = get_current_logfile()
-  with open(filename, 'a') as f:
-    f.write(str(inp) + '\n')
-
-  return str(inp)
-
 
 @app.route('/block/<blockid>', methods=['GET'])
 def get_block(blockid):
@@ -135,7 +93,6 @@ def get_block(blockid):
   which can be found in the LogDAG
   '''
 #  print(request) # debug
-
   filename = config['blockdir'] + '/' + blockid
   with open(filename, 'r') as f:
     block = f.read()
@@ -144,9 +101,9 @@ def get_block(blockid):
 
 @app.route('/block/metadata', methods=['POST'])
 def put_block_metadata():
-  data = request.form
+  data = request.get_json()
   global LogDAG
-  print(data)
+#  print(data)
   LogDAG.append(data)
   backup_DAG()
   return str(data)
@@ -156,6 +113,60 @@ def backup_DAG():
   filename = config['blockdir'] + '/' + 'logdag.bak'
   with open(filename, 'w') as f:
     f.write(str(LogDAG))
+
+
+
+
+### BEGIN: CRON and CDN ###
+# The following code is used instead of
+# systemd with this logday process,
+# a cron daemon and a webserver that generates logs
+# this is done to mock them,
+# enabling us to create our own logging
+crontime = ''
+def cron():
+  '''
+  This function rotates the logs,
+  which should be done by /etc/cron.d
+  however, for this research, we do it here
+  so we can see it in the logs
+  '''
+  now = datetime.datetime.now()
+  arr = now.isoformat().split(':')
+  timestr = arr[0] + '_' + arr[1]
+  
+  global crontime
+  if crontime != timestr:
+    if len(crontime):
+      metadata = create_block()
+      broadcast_metadata(metadata)
+    crontime = timestr
+#    print('Log rotated')
+
+def get_current_logfile():
+  global crontime
+  filename = config['logdir'] + '/' + crontime
+  return filename
+
+@app.route('/cdn/<int:inp>', methods=['GET'])
+def cdn(inp):
+  '''
+  This function simulates a webserver or cdn.
+  We use this instead of Nginx so we can use custom logging
+  and trigger the cron function.
+  '''
+#  print(request) # debug
+  cron()
+
+  filename = get_current_logfile()
+  with open(filename, 'a') as f:
+    f.write(str(inp) + '\n')
+
+  return str(inp)
+
+### END: CRON and CDN
+
+
 
 if __name__ == '__main__':
   init()

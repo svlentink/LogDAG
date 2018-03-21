@@ -57,6 +57,13 @@ services:
       main:
     volumes:
       - $PWD/tester.py:/main.py:ro
+  gui:
+    image: nginx:alpine
+    volumes:
+      - $PWD/GUI:/usr/share/nginx/html #default location of nginx container
+      - /tmp/LogDAGblocks/cdn01:/usr/share/nginx/html/datadir:ro
+    ports:
+      - 8080:80
 
 networks:
   main:

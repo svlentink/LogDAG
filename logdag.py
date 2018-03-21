@@ -5,6 +5,7 @@ import shutil
 from flask import Flask
 from flask import request
 import requests
+import json
 import time
 import datetime
 app = Flask(__name__)
@@ -110,9 +111,10 @@ def put_block_metadata():
 
 def backup_DAG():
   global LogDAG
-  filename = config['blockdir'] + '/' + 'logdag.bak'
+  filename = config['blockdir'] + '/' + 'logdag.json'
   with open(filename, 'w') as f:
-    f.write(str(LogDAG))
+    data = json.dumps({'LogDAG':LogDAG})
+    f.write(data)
 
 
 

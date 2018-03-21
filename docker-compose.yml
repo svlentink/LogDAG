@@ -1,5 +1,7 @@
 version: '3'
 services:
+# 5 simulated nodes, which all run
+# the logdag script, a webserver and cron daemon
   cdn01:
     build: .
     environment:
@@ -51,12 +53,18 @@ services:
           - cdn05
     volumes:
       - /tmp/LogDAGblocks/cdn05:/var/log/blocks
+
+# This tester generates web access logs
+# by doing requests to all nodes
   tester:
     build: .
     networks:
       main:
     volumes:
       - $PWD/tester.py:/main.py:ro
+
+# This GUI show the LogDAG,
+# overtime the graph grows
   gui:
     image: nginx:alpine
     volumes:

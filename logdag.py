@@ -7,6 +7,7 @@ from flask import request
 import requests
 import json
 import time
+import hashlib
 import datetime
 app = Flask(__name__)
 
@@ -49,6 +50,7 @@ def create_block():
   '''
   validates = which_to_validate()
   blockid = config['hostname'] + str(datetime.datetime.now().timestamp()) # TODO, this should be an hash of the encrypted block
+  blockid = hashlib.md5(blockid.encode('UTF-8')).hexdigest()
 
   global crontime
   filename = get_current_logfile()

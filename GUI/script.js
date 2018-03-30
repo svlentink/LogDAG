@@ -70,3 +70,5 @@ function loadfile(){
           generateImg(json['LogDAG'])
         });
 }
+
+window.setInterval(loadfile,30000) // every half minute
